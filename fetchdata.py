@@ -3,7 +3,23 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import isInteger
+import sys
+
+def progressbar(it, prefix="", size=60, out=sys.stdout): # Python3.3+
+    count = len(it)
+    def show(j):
+        x = int(size*j/count)
+        print("{}[{}{}] {}/{}".format(prefix, "#"*x, "."*(size-x), j, count),
+                end='\r', file=out, flush=True)
+    show(0)
+    for i, item in enumerate(it):
+        yield item
+        show(i+1)
+    print("\n", flush=True, file=out)
+
+
 # CREATE DATABASE AND TABLE IF NECCESSARY
+print('Hi!', flush=True)
 conn = mysql.connector.connect(
     host='localhost', user='root', password='anm33918')
 cursor = conn.cursor()
@@ -19,8 +35,9 @@ cursor.execute("SHOW TABLES")
 tables = cursor.fetchall()
 if ('houses',) not in tables:
     cursor.execute(
-        """CREATE TABLE houses (price INTEGER, roomsCount SMALLINT, area SMALLINT,Neighbourhood varchar(30),builtYear SMALLINT )""")
-
+        """CREATE TABLE houses (price BIGINT, roomsCount SMALLINT, area SMALLINT,neighbourhood varchar(30),builtYear SMALLINT )""")
+else :
+    cursor.execute("TRUNCATE TABLE houses")
 # READING DATA FROM WEBPAGE
 prices = []
 neighbourhoods = []
@@ -31,7 +48,9 @@ url = "https://shabesh.com/search/%D8%AE%D8%B1%DB%8C%D8%AF-%D9%81%D8%B1%D9%88%D8
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
 }
-for i in range(1, 101):
+
+print('Reading data from shabesh website please wait!', flush=True)
+for i in progressbar(range(10), "Progress: ", 40):
     response = requests.get(url + str(i), headers)
     soup = BeautifulSoup(response.content, "html.parser")
     divs = soup.find_all(
@@ -52,5 +71,17 @@ for i in range(1, 101):
         areas.append(elements[0].text.split(' ')[0])
         roomsCount.append(elements[1].text.split(' ')[0])
         builtYears.append(elements[2].text.split(' ')[0])
+ 
+insertQuery = ("INSERT INTO houses "
+                "(price,roomsCount,area,neighbourhood,builtYear) "
+                "VALUES (%s, %s, %s,%s,%s)")
 
-print('ali khafan')
+loopRange=len(prices)
+print("Inserting in database!...")
+for i in progressbar(range(loopRange),"Progress: ",40):
+    values=(str(prices[i]),roomsCount[i],areas[i],neighbourhoods[i],builtYears[i])
+    cursor.execute(insertQuery,values)
+
+conn.commit()
+cursor.close()
+conn.close()
