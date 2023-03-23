@@ -1,1 +1,0 @@
-Enter number of rooms: Enter area: Enter neighbourhood: Enter built year: Predicted price: 20,812,333,333  تومان
