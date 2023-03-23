@@ -2,20 +2,7 @@ import mysql.connector
 import requests
 from bs4 import BeautifulSoup
 import re
-import isInteger
-import sys
-
-def progressbar(it, prefix="", size=60, out=sys.stdout): # Python3.3+
-    count = len(it)
-    def show(j):
-        x = int(size*j/count)
-        print("{}[{}{}] {}/{}".format(prefix, "#"*x, "."*(size-x), j, count),
-                end='\r', file=out, flush=True)
-    show(0)
-    for i, item in enumerate(it):
-        yield item
-        show(i+1)
-    print("\n", flush=True, file=out)
+from lib import isInteger,progressbar
 
 
 # CREATE DATABASE AND TABLE IF NECCESSARY
@@ -50,7 +37,7 @@ headers = {
 }
 
 print('Reading data from shabesh website please wait!', flush=True)
-for i in progressbar(range(10), "Progress: ", 40):
+for i in progressbar(range(50), "Progress: ", 40):
     response = requests.get(url + str(i), headers)
     soup = BeautifulSoup(response.content, "html.parser")
     divs = soup.find_all(
@@ -62,7 +49,7 @@ for i in progressbar(range(10), "Progress: ", 40):
         price = div.select_one('span.list_infoItem__8EH57.list_infoPrice___aJXK.d-block')
         text = price.text.strip()
         CouldBePriceStr = text.replace(",", "").split()[0]
-        if isInteger.isInteger(CouldBePriceStr):
+        if isInteger(CouldBePriceStr):
             prices.append(int(text.replace(",", "").split()[0]))
         else:
             continue
